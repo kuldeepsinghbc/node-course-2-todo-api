@@ -55,7 +55,6 @@ UserSchema.methods.generateAuthToken = function() {
 UserSchema.statics.findByToken = function(token) {
   var User = this;
   var decoded;
-
   try {
     decoded = jwt.verify(token, "abc123");
   } catch (e) {
@@ -68,6 +67,25 @@ UserSchema.statics.findByToken = function(token) {
     _id: decoded._id,
     "tokens.token": token,
     "tokens.access": "auth"
+  });
+};
+UserSchema.statics.findByCredentials = function(email, password) {
+  var user = this;
+
+  return User.findOne({ email }).then(user => {
+    if (!user) {
+      return Promise.reject();
+    }
+    return new Promise((resolve, reject) => {
+      // use bcrypt.compare to compare password and user.password
+      bcrypt.compare(password, user.password, (err, res) => {
+        if (res) {
+          resolve(user);
+        } else {
+          reject();
+        }
+      });
+    });
   });
 };
 UserSchema.pre("save", function(next) {
