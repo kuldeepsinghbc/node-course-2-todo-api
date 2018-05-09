@@ -1,11 +1,24 @@
 const expect = require("expect");
 const request = require("supertest");
-const { ObjectID } = require("mongodb");
+const {
+  ObjectID
+} = require("mongodb");
 
-const { app } = require("./../server");
-const { Todo } = require("./../models/todo");
-const { User } = require("./../models/user");
-const { todos, populateTodos, users, populateUsers } = require("./seed/seed");
+const {
+  app
+} = require("./../server");
+const {
+  Todo
+} = require("./../models/todo");
+const {
+  User
+} = require("./../models/user");
+const {
+  todos,
+  populateTodos,
+  users,
+  populateUsers
+} = require("./seed/seed");
 
 beforeEach(populateUsers);
 beforeEach(populateTodos);
@@ -29,8 +42,8 @@ describe("POST /todos", () => {
         }
 
         Todo.find({
-          text
-        })
+            text
+          })
           .then(todos => {
             expect(todos.length).toBe(1);
             expect(todos[0].text).toBe(text);
@@ -167,7 +180,10 @@ describe("PATCH/todos/:id", () => {
 
     request(app)
       .patch(`/todos/${hexId}`)
-      .send({ completed: false, text })
+      .send({
+        completed: false,
+        text
+      })
       .expect(200)
       .expect(res => {
         expect(res.body.todo.text).toBe(text);
@@ -206,7 +222,10 @@ describe("POST/users", () => {
 
     request(app)
       .post("/users")
-      .send({ email, password })
+      .send({
+        email,
+        password
+      })
       .expect(200)
       .expect(res => {
         expect(res.headers["x-auth"]).toBeTruthy();
@@ -217,7 +236,9 @@ describe("POST/users", () => {
         if (err) {
           return done(err);
         }
-        User.findOne({ email })
+        User.findOne({
+            email
+          })
           .then(user => {
             expect(user).toBeTruthy();
             expect(user.password).not.toBe(password);
@@ -277,7 +298,10 @@ describe("POST/users/login", () => {
   it("should reject invalid login", done => {
     request(app)
       .post("/users/login")
-      .send({ email: users[1].email, password: users[1].password + "1" })
+      .send({
+        email: users[1].email,
+        password: users[1].password + "1"
+      })
       .expect(400)
       .expect(res => {
         expect(res.headers["x-auth"]).toBeFalsy();
@@ -292,6 +316,27 @@ describe("POST/users/login", () => {
             done();
           })
           .catch(e => done(e));
+      });
+  });
+});
+describe('DELETE /users/me/token', () => {
+  it('should remove auth token on logout', (done) => {
+    // DELETE /users/me/token
+    // Set x-auth equal to token
+    // 200
+    // Find user, verify thta tokens array has length of zero
+    request(app)
+      .delete('/users/me/token')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        User.findById(users[0]._id).then((user) => {
+          expect(user.tokens.length).toBe(0);
+          done();
+        }).catch((e) => done(e));
       });
   });
 });
